@@ -1,0 +1,92 @@
+name: Build an Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        run: npm install
+      
+      - name: Build a artifact
+        run: npm run build
+        
+      - name: List a build artifact
+        run: ls -R ${{ github.workspace }}/dist
+
+      # 因为dist目录添加到.gitignore下, 这里创建build目录用于将dist目录下的打包的内容复制到这里
+      - name: Create or clear build directory
+        run: |
+          if [ -d build ]; then
+            rm -rf build/*
+          else
+            mkdir build
+          fi
+          
+      - name: Save a artifact to repository
+        run: |
+          cp -r dist/* build
+          if git status --porcelain | grep .; then
+            git config --global user.name "GitHub Action"
+            git config --global user.email "action@github.com"
+            git add -A
+            git commit -m "Update build directory"
+            git status
+            git push
+          else
+            echo "The repository is clean."
+          fi
+
+      - name: Upload a build artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-artifacts
+          path: ./dist
+  
+  deploy:
+    needs: [ build ]
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          repository: kanxiaoxi/deploy-repo
+          path: .
+          # 用户 Settings -> Developer settings -> Personal access tokens -> Generate new token
+          # 仓库 Settings -> Secrets and variables -> Actions -> Repository secrets -> PAT
+          token: ${{ secrets.PAT }}
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: build-artifacts
+          path: ./build
+      
+      - name: List a build artifact
+        run: ls -R ./build
+
+      - name: Commit and push changes
+        run: |
+          if git status --porcelain | grep .; then
+            git config --global user.name "GitHub Action"
+            git config --global user.email "action@github.com"
+            git status
+            git add -A
+            git commit -m "Auto-deploy from GitHub Actions"
+            git push
+          else
+            echo "The repository is clean."
+          fi
