@@ -34,7 +34,7 @@ jobs:
           else
             mkdir build
           fi
-          
+      # 将构建在dist目录的内容提交回source-repo仓库的build目录  
       - name: Save a artifact to repository
         run: |
           cp -r dist/* build
@@ -49,6 +49,7 @@ jobs:
             echo "The repository is clean."
           fi
 
+      # 上传dist内容供deploy-repo仓库使用
       - name: Upload a build artifact
         uses: actions/upload-artifact@v3
         with:
@@ -69,7 +70,7 @@ jobs:
           # 仓库 Settings -> Secrets and variables -> Actions -> Repository secrets -> PAT
           token: ${{ secrets.PAT }}
 
-      - name: Download Build Artifacts
+      - name: Download a build artifact
         uses: actions/download-artifact@v3
         with:
           name: build-artifacts
@@ -78,6 +79,7 @@ jobs:
       - name: List a build artifact
         run: ls -R ./build
 
+      # 将build目录的内容提交到deploy-repo仓库
       - name: Commit and push changes
         run: |
           if git status --porcelain | grep .; then
