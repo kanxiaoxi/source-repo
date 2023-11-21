@@ -10,6 +10,7 @@ import HelloWorld from './components/HelloWorld.vue'
 
 <style scoped>
 .app {
-  font-size: 28px;
+  font-size: 48px;
+  font-weight: bold;
 }
 </style>
